@@ -1,0 +1,5 @@
+# Binaries are excluded
+router
+
+# Object files are excluded
+*.o
