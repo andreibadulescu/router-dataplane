@@ -1,4 +1,100 @@
-# Router Dataplane
+# Router Dataplane – EN 🇬🇧
+
+Solution by Andrei-Marcel Bădulescu, Politehnica University of Bucharest <br>
+Date — April 16, 2026
+
+### The Routing Process
+
+<p>
+For the routing process, I took each individual packet, first analyzing
+the contents of the Ethernet header. Depending on the Ethertype, we decide
+whether to drop the packet or process it as an IP or ARP packet.
+</p>
+
+<p>
+If the packet was processed as one respecting the Internet Protocol, then
+I analyzed the header to determine whether the packet is invalid, in which
+case it is dropped. If it passes the checks (such as the one for the
+Checksum field), then I move forward and analyze the TTL field, where I can
+make the following decisions: either send back a "Time Exceeded" message if
+the packet has "expired" over ICMP, or process it further. The next step is
+to check whether it is addressed to the router, in which case I process the
+ICMP header and respond using the same packet, only modifying the fields
+that need to be updated, such as the IP addresses, the TTL, the IP and ICMP
+checksums, and the ICMP message type. If the packet needs to be forwarded,
+there is a possibility that I cannot send it further to the destination, in
+which case I send back a "Destination Unreachable" message over ICMP. If I
+find a valid route, I begin modifying the fields within the Ethernet, IP,
+and ICMP headers. There is a possibility that I do not know the MAC address
+of the next hop, in which case I will need to send an ARP request to obtain
+it and set aside the packet that needs to be forwarded until I obtain the
+hardware address.
+</p>
+
+<p>
+If the packet was processed as one respecting the Address Resolution
+Protocol, then we need to analyze the header to determine whether it is a
+request or a reply. If it is a request, the router will respond with an ARP
+reply message containing the hardware address of the interface from which
+it received the request. If it is a reply, then the router will add the
+correspondent's MAC address to the ARP table. After the reply message is
+processed, the queued packets are checked to determine which one can be
+sent following the resolution of the ARP request.
+</p>
+
+### Longest Prefix Match
+
+<p>
+Initially, for the Longest Prefix Match algorithm, I chose to do a linear
+search to test the other functionalities. This iterates through the
+routing table until it finds a matching entry.
+</p>
+
+<p>
+Out of a desire to learn more, I searched for what structures are used to
+implement such a routing table in a real-world scenario, which can contain
+hundreds of thousands of entries. I came across reading about Radix trees,
+which resemble Tries, but the essential difference between them is that
+Radix trees apply a degree of compression up to the next entry, thereby
+visibly reducing the number of nodes contained in the tree and therefore
+the time complexity at the moment of insertion and/or search. Essentially,
+a search is performed on the tree based on the match of a particular bit
+from the destination IP; if the result of the AND operation is 0, we
+continue to the left, if the result is 1, we continue to the right. There,
+we need to analyze the bit sequence saved by the node; if it matches and
+represents a route, then we can keep it as the best result up to that
+point. If no match occurs, then it is said that "we fell" out of the tree
+and the saved result is the actual result. If we have no saved result then
+there is no route.
+</p>
+
+### About the Correctness of the Solution
+
+<p>
+Running the local checker, I obtained the maximum score, passing all tests
+(100 points). Below I will describe what can be observed in the screenshots
+included in the archive to illustrate the router's behavior in various
+scenarios.
+</p>
+
+### About Forwarding
+
+In the screenshot "subiect1.png", we can observe an ICMP "Echo" message being sent from the machine with address 192.168.0.2 (h1) to 192.168.3.2 (h3). We can observe in the upper Wireshark window (r0) how before
+each forwarding of the ICMP packet an exchange
+of ARP packets takes place to allow the correct writing of the Ethernet headers. In the lower window is r1. We can see how the request is sent h0-r0, r0-r1, in the
+lower window r1-h3, h3-r1, r1-r0 and back in the upper one r0-h0.
+
+### About ARP
+
+In the screenshot we can see how h0 sends an ARP request to r0 through the arping command, and r0 responds with an ARP reply. We can observe the two packets in the Wireshark window.
+
+### About ICMP
+
+In the screenshot we can see how h0 sends to r0 a message
+of type ICMP Echo through the ping command, and r0 responds with an
+ICMP Echo Reply. We can observe the two packets in the Wireshark window.
+
+# Router Dataplane – RO 🇷🇴
 
 Soluție realizată de Andrei-Marcel Bădulescu, Universitatea Politehnica București <br>
 Dată — 16 aprilie 2026
